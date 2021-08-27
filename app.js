@@ -18,13 +18,14 @@ const newsFeed = getData(NEWS_URL);
 
 window.addEventListener("hashchange", () => {
   const id = location.hash.substr(1);
-
   const newsContent = getData(CONTENT_URL.replace("@id", id));
-  const $title = document.createElement("h1");
 
-  $title.innerHTML = newsContent.title;
-
-  $content.appendChild($title);
+  container.innerHTML = `
+    <h1>${newsContent.title}</h1>
+    <div>
+      <a href="#">목록</a>
+    </div>
+  `;
 });
 
 newsFeed.forEach((feed) => {
