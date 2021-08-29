@@ -3,15 +3,28 @@ type StoreType = {
   feeds: NewsFeedType[];
 };
 
-type NewsFeedType = {
+type NewsType = {
   id: number;
-  comments_count: number;
+  time_ago: string;
+  title: string;
   url: string;
   user: string;
-  time_ago: string;
+  content: string;
+};
+
+type NewsFeedType = NewsType & {
+  comments_count: number;
   points: number;
-  title: string;
   read?: boolean;
+};
+
+type NewsDetailType = NewsType & {
+  comments: NewsCommentType[];
+};
+
+type NewsCommentType = NewsType & {
+  comments: NewsCommentType[];
+  level: number;
 };
 
 const ajax = new XMLHttpRequest();
@@ -27,14 +40,14 @@ const store: StoreType = {
   feeds: [],
 };
 
-function getData(url: string) {
+function getData<AjaxResponse>(url: string): AjaxResponse {
   ajax.open("GET", url, false);
   ajax.send();
 
   return JSON.parse(ajax.response);
 }
 
-function updateView(html: string) {
+function updateView(html: string): void {
   if (container) {
     container.innerHTML = html;
     return;
@@ -42,19 +55,19 @@ function updateView(html: string) {
   console.error("최상위 컨테이너가 없습니다.");
 }
 
-function makeFeed(feeds: NewsFeedType[]) {
+function makeFeed(feeds: NewsFeedType[]): NewsFeedType[] {
   for (let i = 0; i < feeds.length; i++) {
     feeds[i].read = false;
   }
   return feeds;
 }
 
-function renderNewsFeed() {
+function renderNewsFeed(): void {
   const newsList = [];
   let newsFeed: NewsFeedType[] = store.feeds;
 
   if (newsFeed.length === 0) {
-    store.feeds = makeFeed(getData(NEWS_URL));
+    store.feeds = makeFeed(getData<NewsFeedType[]>(NEWS_URL));
     newsFeed = store.feeds;
   }
 
@@ -78,7 +91,7 @@ function renderNewsFeed() {
         </div>
       </div>
       <div class="p-4 text-2xl text-gray-700">
-        {{__news_feed__}}        
+        {{__news_feed__}}
       </div>
     </div>
   `;
@@ -90,7 +103,7 @@ function renderNewsFeed() {
       } mt-6 rounded-lg shadow-md transition-colors duration-500 hover:bg-green-100">
         <div class="flex">
           <div class="flex-auto">
-            <a href="#/show/${newsFeed[i].id}">${newsFeed[i].title}</a>  
+            <a href="#/show/${newsFeed[i].id}">${newsFeed[i].title}</a>
           </div>
           <div class="text-center text-sm">
             <div class="w-10 text-white bg-green-300 rounded-lg px-0 py-2">${
@@ -103,25 +116,25 @@ function renderNewsFeed() {
             <div><i class="fas fa-user mr-1"></i>${newsFeed[i].user}</div>
             <div><i class="fas fa-heart mr-1"></i>${newsFeed[i].points}</div>
             <div><i class="far fa-clock mr-1"></i>${newsFeed[i].time_ago}</div>
-          </div>  
+          </div>
         </div>
-      </div>    
+      </div>
     `);
   }
 
   template = template.replace("{{__news_feed__}}", newsList.join(""));
   template = template.replace(
     "{{__prev_page__}}",
-    store.currentPage > 1 ? store.currentPage - 1 : 1
+    String(store.currentPage > 1 ? store.currentPage - 1 : 1)
   );
-  template = template.replace("{{__next_page__}}", store.currentPage + 1);
+  template = template.replace("{{__next_page__}}", String(store.currentPage + 1));
 
   updateView(template);
 }
 
-function renderNewsDetail() {
+function renderNewsDetail(): void {
   const id = location.hash.substr(7);
-  const newsContent = getData(CONTENT_URL.replace("@id", id));
+  const newsContent = getData<NewsDetailType>(CONTENT_URL.replace("@id", id));
   let template = `
     <div class="bg-gray-600 min-h-screen pb-8">
       <div class="bg-white text-xl">
@@ -156,38 +169,39 @@ function renderNewsDetail() {
     }
   }
 
-  function renderComment(comments, called = 0) {
-    const commentString = [];
-
-    for (let i = 0; i < comments.length; i++) {
-      commentString.push(`
-        <div style="padding-left: ${called * 40}px;" class="mt-4">
-          <div class="text-gray-400">
-            <i class="fa fa-sort-up mr-2"></i>
-            <strong>${comments[i].user}</strong> ${comments[i].time_ago}
-          </div>
-          <p class="text-gray-700">${comments[i].content}</p>
-        </div>      
-      `);
-
-      if (comments[i].comments.length > 0) {
-        commentString.push(renderComment(comments[i].comments, called + 1));
-      }
-    }
-
-    return commentString.join("");
-  }
-
   updateView(template.replace("{{__comments__}}", renderComment(newsContent.comments)));
 }
 
-function router() {
+function renderComment(comments: NewsCommentType[]): string {
+  const commentString = [];
+
+  for (let i = 0; i < comments.length; i++) {
+    const { level, user, time_ago, content } = comments[i];
+    commentString.push(`
+      <div style="padding-left: ${level * 40}px;" class="mt-4">
+        <div class="text-gray-400">
+          <i class="fa fa-sort-up mr-2"></i>
+          <strong>${user}</strong> ${time_ago}
+        </div>
+        <p class="text-gray-700">${content}</p>
+      </div>
+    `);
+
+    if (comments[i].comments.length > 0) {
+      commentString.push(renderComment(comments[i].comments));
+    }
+  }
+
+  return commentString.join("");
+}
+
+function router(): void {
   const routePath = location.hash;
   if (!routePath) {
     renderNewsFeed();
     return;
   }
-  if (routePath.includes("#/page/")) {
+  if (routePath.indexOf("#/page/") >= 0) {
     store.currentPage = parseInt(routePath.substr(7));
     renderNewsFeed();
     return;
