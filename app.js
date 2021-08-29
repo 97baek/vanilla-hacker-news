@@ -8,6 +8,7 @@ const CONTENT_URL = `https://api.hnpwa.com/v0/item/@id.json`;
 
 const store = {
   currentPage: 1,
+  feeds: [],
 };
 
 function getData(url) {
@@ -17,9 +18,22 @@ function getData(url) {
   return JSON.parse(ajax.response);
 }
 
+function makeFeed(feeds) {
+  for (let i = 0; i < feeds.length; i++) {
+    feeds[i].read = false;
+  }
+  return feeds;
+}
+
 function renderNewsFeed() {
-  const newsFeed = getData(NEWS_URL);
   const newsList = [];
+  let newsFeed = store.feeds;
+
+  if (newsFeed.length === 0) {
+    store.feeds = makeFeed(getData(NEWS_URL));
+    newsFeed = store.feeds;
+  }
+
   let template = `
     <div class="bg-gray-600 min-h-screen">
       <div class="bg-white text-xl">
@@ -110,6 +124,13 @@ function renderNewsDetail() {
       </div>
     </div>
   `;
+
+  for (let i = 0; i < store.feeds.length; i++) {
+    if (store.feeds[i].id === parseInt(id)) {
+      store.feeds[i].read = true;
+      break;
+    }
+  }
 
   function renderComment(comments, called = 0) {
     const commentString = [];
