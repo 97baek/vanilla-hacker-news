@@ -1,24 +1,48 @@
+type StoreType = {
+  currentPage: number;
+  feeds: NewsFeedType[];
+};
+
+type NewsFeedType = {
+  id: number;
+  comments_count: number;
+  url: string;
+  user: string;
+  time_ago: string;
+  points: number;
+  title: string;
+  read?: boolean;
+};
+
 const ajax = new XMLHttpRequest();
 
-const container = document.getElementById("root");
+const container: HTMLElement | null = document.getElementById("root");
 const $ul = document.createElement("ul");
 
 const NEWS_URL = "https://api.hnpwa.com/v0/news/1.json";
 const CONTENT_URL = `https://api.hnpwa.com/v0/item/@id.json`;
 
-const store = {
+const store: StoreType = {
   currentPage: 1,
   feeds: [],
 };
 
-function getData(url) {
+function getData(url: string) {
   ajax.open("GET", url, false);
   ajax.send();
 
   return JSON.parse(ajax.response);
 }
 
-function makeFeed(feeds) {
+function updateView(html: string) {
+  if (container) {
+    container.innerHTML = html;
+    return;
+  }
+  console.error("최상위 컨테이너가 없습니다.");
+}
+
+function makeFeed(feeds: NewsFeedType[]) {
   for (let i = 0; i < feeds.length; i++) {
     feeds[i].read = false;
   }
@@ -27,7 +51,7 @@ function makeFeed(feeds) {
 
 function renderNewsFeed() {
   const newsList = [];
-  let newsFeed = store.feeds;
+  let newsFeed: NewsFeedType[] = store.feeds;
 
   if (newsFeed.length === 0) {
     store.feeds = makeFeed(getData(NEWS_URL));
@@ -92,7 +116,7 @@ function renderNewsFeed() {
   );
   template = template.replace("{{__next_page__}}", store.currentPage + 1);
 
-  container.innerHTML = template;
+  updateView(template);
 }
 
 function renderNewsDetail() {
@@ -154,7 +178,7 @@ function renderNewsDetail() {
     return commentString.join("");
   }
 
-  container.innerHTML = template.replace("{{__comments__}}", renderComment(newsContent.comments));
+  updateView(template.replace("{{__comments__}}", renderComment(newsContent.comments)));
 }
 
 function router() {
