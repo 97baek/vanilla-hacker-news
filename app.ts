@@ -75,10 +75,10 @@ class NewsDetailApi extends Api {
 }
 
 abstract class View {
-  template: string;
-  renderedTemplate: string;
-  container: HTMLElement;
-  htmlList: string[];
+  private template: string;
+  private renderedTemplate: string;
+  private container: HTMLElement;
+  private htmlList: string[];
 
   constructor(containerId: string, template: string) {
     const $container = document.getElementById(containerId);
@@ -93,26 +93,26 @@ abstract class View {
     this.htmlList = [];
   }
 
-  updateView(): void {
+  protected updateView(): void {
     this.container.innerHTML = this.renderedTemplate;
     this.renderedTemplate = this.template;
   }
 
-  addHtml(htmlString: string): void {
+  protected addHtml(htmlString: string): void {
     this.htmlList.push(htmlString);
   }
 
-  getHtml(): string {
+  protected getHtml(): string {
     const snapshot = this.htmlList.join("");
     this.clearHtmlList();
     return snapshot;
   }
 
-  setTemplateData(key: string, value: string): void {
+  protected setTemplateData(key: string, value: string): void {
     this.renderedTemplate = this.renderedTemplate.replace(`{{__${key}__}}`, value);
   }
 
-  clearHtmlList(): void {
+  private clearHtmlList(): void {
     this.htmlList = [];
   }
 
@@ -120,8 +120,8 @@ abstract class View {
 }
 
 class NewsFeedView extends View {
-  api: NewsFeedApi;
-  feeds: INewsFeed[];
+  private api: NewsFeedApi;
+  private feeds: INewsFeed[];
 
   constructor(containerId: string) {
     let template = `
@@ -194,7 +194,7 @@ class NewsFeedView extends View {
     this.updateView();
   }
 
-  makeFeed(): void {
+  private makeFeed(): void {
     for (let i = 0; i < this.feeds.length; i++) {
       this.feeds[i].read = false;
     }
