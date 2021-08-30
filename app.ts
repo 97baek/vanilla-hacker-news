@@ -1,31 +1,31 @@
-type StoreType = {
+interface IStore {
   currentPage: number;
-  feeds: NewsFeedType[];
-};
+  feeds: INewsFeed[];
+}
 
-type NewsType = {
-  id: number;
-  time_ago: string;
-  title: string;
-  url: string;
-  user: string;
-  content: string;
-};
+interface INews {
+  readonly id: number;
+  readonly time_ago: string;
+  readonly title: string;
+  readonly url: string;
+  readonly user: string;
+  readonly content: string;
+}
 
-type NewsFeedType = NewsType & {
-  comments_count: number;
-  points: number;
+interface INewsFeed extends INews {
+  readonly comments_count: number;
+  readonly points: number;
   read?: boolean;
-};
+}
 
-type NewsDetailType = NewsType & {
-  comments: NewsCommentType[];
-};
+interface INewsDetail extends INews {
+  readonly comments: INewsComment[];
+}
 
-type NewsCommentType = NewsType & {
-  comments: NewsCommentType[];
-  level: number;
-};
+interface INewsComment extends INews {
+  readonly comments: INewsComment[];
+  readonly level: number;
+}
 
 const ajax = new XMLHttpRequest();
 
@@ -35,7 +35,7 @@ const $ul = document.createElement("ul");
 const NEWS_URL = "https://api.hnpwa.com/v0/news/1.json";
 const CONTENT_URL = `https://api.hnpwa.com/v0/item/@id.json`;
 
-const store: StoreType = {
+const store: IStore = {
   currentPage: 1,
   feeds: [],
 };
@@ -55,7 +55,7 @@ function updateView(html: string): void {
   console.error("최상위 컨테이너가 없습니다.");
 }
 
-function makeFeed(feeds: NewsFeedType[]): NewsFeedType[] {
+function makeFeed(feeds: INewsFeed[]): INewsFeed[] {
   for (let i = 0; i < feeds.length; i++) {
     feeds[i].read = false;
   }
@@ -64,10 +64,10 @@ function makeFeed(feeds: NewsFeedType[]): NewsFeedType[] {
 
 function renderNewsFeed(): void {
   const newsList = [];
-  let newsFeed: NewsFeedType[] = store.feeds;
+  let newsFeed: INewsFeed[] = store.feeds;
 
   if (newsFeed.length === 0) {
-    store.feeds = makeFeed(getData<NewsFeedType[]>(NEWS_URL));
+    store.feeds = makeFeed(getData<INewsFeed[]>(NEWS_URL));
     newsFeed = store.feeds;
   }
 
@@ -134,7 +134,7 @@ function renderNewsFeed(): void {
 
 function renderNewsDetail(): void {
   const id = location.hash.substr(7);
-  const newsContent = getData<NewsDetailType>(CONTENT_URL.replace("@id", id));
+  const newsContent = getData<INewsDetail>(CONTENT_URL.replace("@id", id));
   let template = `
     <div class="bg-gray-600 min-h-screen pb-8">
       <div class="bg-white text-xl">
@@ -172,7 +172,7 @@ function renderNewsDetail(): void {
   updateView(template.replace("{{__comments__}}", renderComment(newsContent.comments)));
 }
 
-function renderComment(comments: NewsCommentType[]): string {
+function renderComment(comments: INewsComment[]): string {
   const commentString = [];
 
   for (let i = 0; i < comments.length; i++) {
