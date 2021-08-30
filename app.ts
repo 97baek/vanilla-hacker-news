@@ -27,6 +27,11 @@ interface INewsComment extends INews {
   readonly level: number;
 }
 
+interface IRoute {
+  path: string;
+  page: View;
+}
+
 const ajax = new XMLHttpRequest();
 
 const container: HTMLElement | null = document.getElementById("root");
@@ -69,7 +74,7 @@ class NewsDetailApi extends Api {
   }
 }
 
-class View {
+abstract class View {
   template: string;
   renderedTemplate: string;
   container: HTMLElement;
@@ -110,6 +115,8 @@ class View {
   clearHtmlList(): void {
     this.htmlList = [];
   }
+
+  abstract render(): void;
 }
 
 class NewsFeedView extends View {
@@ -155,6 +162,7 @@ class NewsFeedView extends View {
   }
 
   render(): void {
+    store.currentPage = Number(location.hash.substr(7) || 1);
     for (let i = (store.currentPage - 1) * 10; i < store.currentPage * 10; i++) {
       const { read, id, title, comments_count, user, points, time_ago } = this.feeds[i];
       this.addHtml(`
@@ -266,20 +274,45 @@ class NewsDetailView extends View {
   }
 }
 
-function router(): void {
-  const routePath = location.hash;
-  if (!routePath) {
-    renderNewsFeed();
-    return;
+class Router {
+  routeTable: IRoute[];
+  defaultRoute: IRoute | null;
+
+  constructor() {
+    window.addEventListener("hashchange", this.route.bind(this));
+    this.routeTable = [];
+    this.defaultRoute = null;
   }
-  if (routePath.indexOf("#/page/") >= 0) {
-    store.currentPage = parseInt(routePath.substr(7));
-    renderNewsFeed();
-    return;
+
+  setDefaultPage(page: View): void {
+    this.defaultRoute = { path: "", page };
   }
-  renderNewsDetail();
+
+  addRoutePath(path: string, page: View): void {
+    this.routeTable.push({ path, page });
+  }
+
+  route() {
+    const routePath = location.hash;
+    if (routePath === "" && this.defaultRoute) {
+      this.defaultRoute.page.render();
+    }
+
+    for (const routeInfo of this.routeTable) {
+      if (routePath.indexOf(routeInfo.path) >= 0) {
+        routeInfo.page.render();
+        break;
+      }
+    }
+  }
 }
 
-window.addEventListener("hashchange", router);
+const router: Router = new Router();
+const newsFeedView = new NewsFeedView("root");
+const newsDetailView = new NewsDetailView("root");
 
-router();
+router.setDefaultPage(newsFeedView);
+router.addRoutePath("/page/", newsFeedView);
+router.addRoutePath("/show/", newsDetailView);
+
+router.route();
