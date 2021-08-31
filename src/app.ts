@@ -1,14 +1,11 @@
 import { NewsDetailView, NewsFeedView } from "./page";
 import Router from "./core/router";
-import { IStore } from "./types";
+import Store from "./store";
 
-const store: IStore = {
-  currentPage: 1,
-  feeds: [],
-};
+const store = new Store();
 
-const newsDetailView = new NewsDetailView("root");
-const newsFeedView = new NewsFeedView("root");
+const newsDetailView = new NewsDetailView("root", store);
+const newsFeedView = new NewsFeedView("root", store);
 const router: Router = new Router();
 
 router.setDefaultPage(newsFeedView);

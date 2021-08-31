@@ -1,8 +1,15 @@
 import View from "../core/view";
 
 export interface IStore {
+  getAllFeeds: () => INewsFeed[];
+  getFeed: (index: number) => INewsFeed;
+  setFeeds: (feeds: INewsFeed[]) => void;
+  setRead: (id: number) => void;
+  hasFeeds: boolean;
   currentPage: number;
-  feeds: INewsFeed[];
+  numberOfFeed: number;
+  nextPage: number;
+  prevPage: number;
 }
 
 export interface INews {
@@ -32,4 +39,5 @@ export interface INewsComment extends INews {
 export interface IRoute {
   path: string;
   page: View;
+  params: RegExp | null;
 }
