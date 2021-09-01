@@ -37,13 +37,12 @@ export default class NewsFeedView extends View {
 
     this.store = store;
     this.api = new NewsFeedApi(NEWS_URL);
-
-    if (!this.store.hasFeeds) {
-      this.store.setFeeds(this.api.getData());
-    }
   }
 
-  render(page: string = "1"): void {
+  async render(page: string = "1"): Promise<void> {
+    if (!this.store.hasFeeds) {
+      this.store.setFeeds(await this.api.getData());
+    }
     this.store.currentPage = Number(page);
 
     for (let i = (this.store.currentPage - 1) * 10; i < this.store.currentPage * 10; i++) {
